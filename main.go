@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,9 +15,40 @@ import (
 )
 
 type ContactForm struct {
-	Name  string `json:"name" binding:"required"`
-	Email string `json:"email" binding:"required,email"`
-	Phone string `json:"phone" binding:"required"`
+	Name           string `json:"name" binding:"required"`
+	Email          string `json:"email" binding:"required,email"`
+	Phone          string `json:"phone" binding:"required"`
+	RecaptchaToken string `json:"recaptchaToken" binding:"required"`
+}
+
+type RecaptchaResponse struct {
+	Success    bool     `json:"success"`
+	ErrorCodes []string `json:"error-codes"`
+}
+
+func verifyRecaptcha(token string) (bool, error) {
+	secret := os.Getenv("RECAPTCHA_SECRET_KEY")
+	if secret == "" {
+		return false, fmt.Errorf("recaptcha secret key not set")
+	}
+
+	reqBody := fmt.Sprintf("secret=%s&response=%s", secret, token)
+	resp, err := http.Post(
+		"https://www.google.com/recaptcha/api/siteverify",
+		"application/x-www-form-urlencoded",
+		bytes.NewBufferString(reqBody),
+	)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	var recaptchaResp RecaptchaResponse
+	if err := json.NewDecoder(resp.Body).Decode(&recaptchaResp); err != nil {
+		return false, err
+	}
+
+	return recaptchaResp.Success, nil
 }
 
 func sendEmail(form ContactForm) error {
@@ -63,7 +96,6 @@ func sendEmail(form ContactForm) error {
   </div>
 `, form.Name, form.Email, form.Phone, time.Now().Format("02 Jan 2006 15:04 MST")))
 
-	// Confirmation email TO USER
 	m2 := gomail.NewMessage()
 	m2.SetHeader("From", emailUser)
 	m2.SetHeader("To", form.Email)
@@ -87,7 +119,6 @@ func sendEmail(form ContactForm) error {
   </div>
 `, form.Name, form.Name, form.Email, form.Phone))
 
-	// Send both emails
 	if err := d.DialAndSend(m1, m2); err != nil {
 		return err
 	}
@@ -96,7 +127,6 @@ func sendEmail(form ContactForm) error {
 }
 
 func main() {
-	// Load environment variables from .env
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("⚠️ No .env file found. (Okay in production)")
@@ -104,7 +134,6 @@ func main() {
 
 	router := gin.Default()
 
-	// CORS: allow frontend (e.g. Nuxt) to send requests
 	router.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
@@ -116,7 +145,6 @@ func main() {
 		c.Next()
 	})
 
-	// POST /contact endpoint
 	router.POST("/contact", func(c *gin.Context) {
 		var form ContactForm
 
@@ -125,13 +153,18 @@ func main() {
 			return
 		}
 
-		// Validate phone number format
+		// Verify reCAPTCHA token
+		valid, err := verifyRecaptcha(form.RecaptchaToken)
+		if err != nil || !valid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "reCAPTCHA validation failed"})
+			return
+		}
+
 		if matched, _ := regexp.MatchString(`^\d{10,15}$`, form.Phone); !matched {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid phone number format"})
 			return
 		}
 
-		// Send the email
 		if err := sendEmail(form); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send email"})
 			return
@@ -140,6 +173,5 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"message": "Message received! Email sent ✅"})
 	})
 
-	// Start the server
 	router.Run(":8080")
 }
