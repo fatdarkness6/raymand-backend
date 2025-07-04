@@ -1,0 +1,50 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Output of go build / go run
+/main
+/main.exe
+
+# Go workspace
+bin/
+pkg/
+*.prof
+
+# Vendor directory (if using Go modules)
+vendor/
+
+# Dependency directories
+Godeps/
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS junk
+.DS_Store
+
+# Logs
+*.log
+
+# Env files (✅ don't leak secrets)
+.env
+.env.*
+
+# Coverage
+coverage.out
+cover.out
+
+# Test cache
+*.tmp
+*.cache
+
+# Node junk if combined with frontend
+node_modules/
