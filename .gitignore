@@ -1,50 +1,43 @@
-# Binaries
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
-
-# Output of go build / go run
-/main
-/main.exe
-
-# Go workspace
-bin/
-pkg/
-*.prof
-
-# Vendor directory (if using Go modules)
-vendor/
-
-# Dependency directories
-Godeps/
-
-# IDE/editor configs
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# macOS junk
-.DS_Store
+# Node modules
+node_modules/
 
 # Logs
+logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Env files (✅ don't leak secrets)
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage / test
+coverage/
+*.lcov
+
+# Build outputs
+dist/
+build/
+.tmp/
+
+# Environment variables
 .env
-.env.*
+.env.local
+.env.*.local
 
-# Coverage
-coverage.out
-cover.out
+# OS / Editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
 
-# Test cache
-*.tmp
-*.cache
+# TypeScript (if you use it)
+*.tsbuildinfo
 
-# Node junk if combined with frontend
-node_modules/
+# Optional npm cache
+.npm
