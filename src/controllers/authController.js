@@ -21,12 +21,12 @@ const sendMail = async (to, subject, htmlContent) => {
 // ================== REGISTER ==================
 export const register = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const {name , email, password } = req.body;
     let user = await User.findOne({ email });
-    if (user) return res.status(400).json({ msg: 'User already exists' });
+    if (user) return res.status(400).json({ msg: 'User already exists' , isVerified : user.isVerified });
 
-    const verificationCode = crypto.randomBytes(20).toString('hex');
-    user = await User.create({ email, password, verificationCode });
+    const verificationCode = crypto.randomBytes(5).toString('hex');
+    user = await User.create({name , email, password, verificationCode });
 
     // Beautiful verification email
     await sendMail(
@@ -46,6 +46,47 @@ export const register = async (req, res) => {
     );
 
     res.status(201).json({ msg: 'User registered. Please verify your email.' });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+};
+
+// ================== RESEND VERIFICATION CODE ==================
+export const resendVerificationCode = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+
+    if (user.isVerified) {
+      return res.status(400).json({ msg: 'Email is already verified' });
+    }
+
+    // Generate new code (you can also reuse the old one if not expired)
+    const verificationCode = crypto.randomBytes(5).toString('hex');
+    user.verificationCode = verificationCode;
+    user.verificationCodeExp = Date.now() + 15 * 60 * 1000; // 15 minutes
+    await user.save();
+
+    // Send new email
+    await sendMail(
+      user.email,
+      "Resend: Verify Your Email ✉️",
+      `
+      <div style="font-family: Arial, sans-serif; text-align: center; padding: 30px;">
+        <h2 style="color: #4CAF50;">Verification Code Resent</h2>
+        <p>Hi 👋</p>
+        <p>You requested a new verification code. Use the code below to verify your email:</p>
+        <h1 style="color: #FF5722;">${verificationCode}</h1>
+        <p style="font-size: 14px; color: #555;">This code will expire in 15 minutes.</p>
+        <hr style="margin: 20px 0;" />
+        <p>Raymand Lab Team</p>
+      </div>
+      `
+    );
+
+    res.json({ msg: 'New verification code sent to email.' });
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
