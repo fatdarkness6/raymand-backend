@@ -57,16 +57,27 @@ export const resendVerificationCode = async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ msg: 'User not found' });
+    if (!user) return res.status(404).json({ msg: "User not found" });
 
     if (user.isVerified) {
-      return res.status(400).json({ msg: 'Email is already verified' });
+      return res.status(400).json({ msg: "Email is already verified" });
     }
 
-    // Generate new code (you can also reuse the old one if not expired)
-    const verificationCode = crypto.randomBytes(5).toString('hex');
+    // === Cooldown check (60 seconds) ===
+    const cooldownSeconds = 60;
+    if (user.lastResendAt && Date.now() - user.lastResendAt.getTime() < cooldownSeconds * 1000) {
+      const remaining = cooldownSeconds - Math.floor((Date.now() - user.lastResendAt.getTime()) / 1000);
+      return res.status(429).json({
+        msg: `Please wait ${remaining}s before requesting a new code.`,
+        remaining,
+      });
+    }
+
+    // Generate new code
+    const verificationCode = crypto.randomBytes(5).toString("hex");
     user.verificationCode = verificationCode;
     user.verificationCodeExp = Date.now() + 15 * 60 * 1000; // 15 minutes
+    user.lastResendAt = new Date(); // save last resend time
     await user.save();
 
     // Send new email
@@ -86,12 +97,30 @@ export const resendVerificationCode = async (req, res) => {
       `
     );
 
-    res.json({ msg: 'New verification code sent to email.' });
+    res.json({ msg: "New verification code sent to email." });
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
 };
 
+// ================== Get Resend Status ==================
+export const getResendStatus = async (req, res) => {
+  const { email } = req.query;
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ msg: "User not found" });
+
+  const cooldownSeconds = 60;
+  let remaining = 0;
+  if (user.lastResendAt) {
+    const diff = Date.now() - user.lastResendAt.getTime();
+    if (diff < cooldownSeconds * 1000) {
+      remaining = cooldownSeconds - Math.floor(diff / 1000);
+    }
+  }
+
+  res.json({ remaining });
+};
 // ================== LOGIN STEP 1 (SEND 2FA CODE) ==================
 export const login = async (req, res) => {
   try {

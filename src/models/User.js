@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
   resetTokenExp: { type: Date },      // expiry time
   twoFACode: { type: String },      // 2FA code
   twoFACodeExp: { type: Date },     // expiry
+  lastResendAt: { type: Date }
 }, { timestamps: true });
 
 // hash password before save
