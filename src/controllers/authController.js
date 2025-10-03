@@ -326,3 +326,18 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ msg: err.message });
   }
 };
+
+// ================== GET PROFILE ==================
+export const getProfile = async (req, res) => {
+  try {
+    res.json({
+      id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      isVerified: req.user.isVerified,
+      createdAt: req.user.createdAt,
+    });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+};
