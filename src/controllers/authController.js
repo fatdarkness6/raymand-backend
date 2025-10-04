@@ -230,6 +230,56 @@ export const verify2FA = async (req, res) => {
     res.status(500).json({ msg: err.message });
   }
 };
+// ================== RESEND 2FA CODE ==================
+export const resend2FACode = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ msg: "User not found" });
+
+    const now = Date.now();
+
+    // Cooldown: don’t resend too soon
+    if (
+      user.twoFACodeExp &&
+      user.twoFACodeExp > now &&
+      now - (user.last2FAResendAt || 0) < 60 * 1000
+    ) {
+      const remaining = Math.ceil(
+        (60 * 1000 - (now - (user.last2FAResendAt || 0))) / 1000
+      );
+      return res
+        .status(429)
+        .json({
+          msg: `Please wait ${remaining}s before resending the 2FA code.`,
+        });
+    }
+
+    // Generate and send new code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    user.twoFACode = code;
+    user.twoFACodeExp = now + 5 * 60 * 1000;
+    user.last2FAResendAt = now;
+    await user.save();
+
+    await sendMail(
+      user.email,
+      "Your new 2FA Login Code 🔒",
+      `
+      <div style="font-family: Arial, sans-serif; text-align: center; padding: 30px;">
+        <h2 style="color: #2196F3;">Two-Factor Authentication</h2>
+        <p>Use this new code to log in:</p>
+        <h1 style="color: #FF5722;">${code}</h1>
+        <p>This code expires in 5 minutes.</p>
+      </div>
+      `
+    );
+
+    res.json({ msg: "New 2FA code sent to your email." });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+};
 
 // ================== FORGOT / RESET PASSWORD ==================
 export const forgotPassword = async (req, res) => {
