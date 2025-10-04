@@ -167,7 +167,7 @@ export const login = async (req, res) => {
     if (user.twoFACode && user.twoFACodeExp > now) {
       const remaining = Math.ceil((user.twoFACodeExp - now) / 1000);
       return res.status(429).json({
-        msg: `A 2FA code was already sent. Please wait ${remaining}s before requesting a new one.`,
+        msg: `A 2FA code was already sent. If you dont get a code , you can click on resend the code `,
         remaining,
       });
     }
@@ -248,11 +248,9 @@ export const resend2FACode = async (req, res) => {
       const remaining = Math.ceil(
         (60 * 1000 - (now - (user.last2FAResendAt || 0))) / 1000
       );
-      return res
-        .status(429)
-        .json({
-          msg: `Please wait ${remaining}s before resending the 2FA code.`,
-        });
+      return res.status(429).json({
+        msg: `Please wait ${remaining}s before resending the 2FA code.`,
+      });
     }
 
     // Generate and send new code
