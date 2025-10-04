@@ -160,11 +160,25 @@ export const login = async (req, res) => {
     if (!user.isVerified)
       return res.status(401).json({ msg: "Email not verified" });
 
+    // === Cooldown check ===
+    const now = Date.now();
+
+    // if user already has a valid 2FA code that hasn't expired yet
+    if (user.twoFACode && user.twoFACodeExp > now) {
+      const remaining = Math.ceil((user.twoFACodeExp - now) / 1000);
+      return res.status(429).json({
+        msg: `A 2FA code was already sent. Please wait ${remaining}s before requesting a new one.`,
+        remaining,
+      });
+    }
+
+    // Generate new 2FA code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     user.twoFACode = code;
-    user.twoFACodeExp = Date.now() + 5 * 60 * 1000;
+    user.twoFACodeExp = now + 5 * 60 * 1000; // expires in 5 minutes
     await user.save();
 
+    // Send new email
     await sendMail(
       user.email,
       "Your 2FA Login Code 🔒",
@@ -174,11 +188,15 @@ export const login = async (req, res) => {
         <p>Use this code to log in:</p>
         <h1 style="color: #FF5722;">${code}</h1>
         <p>This code expires in 5 minutes.</p>
+        <hr style="margin: 20px 0;" />
+        <p style="font-size: 14px; color: #555;">Raymand Lab Team</p>
       </div>
       `
     );
 
-    res.json({ msg: "2FA code sent to email." });
+    res.json({
+      msg: "2FA code sent to your email. Please verify to continue.",
+    });
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
