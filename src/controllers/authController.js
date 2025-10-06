@@ -280,16 +280,23 @@ export const resend2FACode = async (req, res) => {
 };
 
 // ================== FORGOT / RESET PASSWORD ==================
+
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ msg: "User not found" });
 
-    const resetToken = crypto.randomBytes(20).toString("hex");
-    user.resetToken = resetToken;
-    user.resetTokenExp = Date.now() + 15 * 60 * 1000;
+    // Generate secure random reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenExp = Date.now() + 15 * 60 * 1000; // expires in 15 min
+
+    // Save to user
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExp = resetTokenExp;
     await user.save();
+
+    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}&email=${email}`;
 
     await sendMail(
       email,
@@ -297,15 +304,20 @@ export const forgotPassword = async (req, res) => {
       `
       <div style="font-family: Arial, sans-serif; text-align: center; padding: 30px;">
         <h2 style="color: #F44336;">Password Reset Request</h2>
-        <p>Your reset token is:</p>
-        <h1 style="color: #FF5722;">${resetToken}</h1>
-        <p>This token expires in 15 minutes.</p>
+        <p>Click the button below to reset your password:</p>
+        <a href="${resetLink}"
+          style="background-color:#4CAF50;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">
+          Reset Password
+        </a>
+        <p style="margin-top:20px;">This link will expire in 15 minutes.</p>
+        <p>If you didn’t request this, you can safely ignore this email.</p>
       </div>
       `
     );
 
-    res.json({ msg: "Reset token sent to email." });
+    res.json({ msg: "Reset link sent to your email." });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ msg: err.message });
   }
 };
@@ -313,24 +325,75 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { email, token, newPassword } = req.body;
-    const user = await User.findOne({
-      email,
-      resetToken: token,
-      resetTokenExp: { $gt: Date.now() },
-    });
-    if (!user)
-      return res.status(400).json({ msg: "Invalid or expired reset token" });
+    const user = await User.findOne({ email });
 
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    // 🔒 Token validation
+    if (!user.resetPasswordToken || user.resetPasswordToken !== token) {
+      return res.status(400).json({ msg: "Invalid reset token" });
+    }
+
+    // ⏰ Token expiry check
+    if (user.resetPasswordExp < Date.now()) {
+      return res.status(400).json({ msg: "Reset link expired" });
+    }
+
+    // 🧮 Daily reset limit (2 per day)
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+    user.resetHistory = user.resetHistory || [];
+    const todayResets = user.resetHistory.filter(
+      (d) => d >= startOfDay && d <= endOfDay
+    );
+
+    if (todayResets.length >= 2) {
+      return res.status(429).json({
+        msg: "You can only reset your password twice per day.",
+      });
+    }
+
+    // 🔑 Check new password isn’t same as old one
+    const isSamePassword = await user.matchPassword(newPassword);
+    if (isSamePassword) {
+      return res.status(400).json({
+        msg: "New password cannot be the same as the last password.",
+      });
+    }
+
+    // ✅ Update password
     user.password = newPassword;
-    user.resetToken = undefined;
-    user.resetTokenExp = undefined;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExp = undefined;
+    user.resetHistory.push(new Date());
     await user.save();
 
-    res.json({ msg: "Password reset successful" });
+    // ✉️ Send confirmation email
+    await sendMail(
+      email,
+      "Password Reset Successful ✅",
+      `
+      <div style="font-family: Arial, sans-serif; text-align: center; padding: 30px;">
+        <h2 style="color: #4CAF50;">Password Reset Successful 🎉</h2>
+        <p>Hello ${user.name || "User"},</p>
+        <p>Your password has been successfully updated.</p>
+        <p>If this wasn’t you, please contact support immediately.</p>
+        <hr style="margin: 20px 0;" />
+        <p style="font-size: 14px; color: #555;">Raymand Lab Security Team</p>
+      </div>
+      `
+    );
+
+    res.json({ msg: "Password reset successful ✅" });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ msg: err.message });
   }
 };
+
+
 
 // ================== GET PROFILE ==================
 export const getProfile = async (req, res) => {
