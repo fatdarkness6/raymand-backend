@@ -7,7 +7,13 @@ import bcrypt from "bcryptjs"; // for password hashing
 // ==================================================
 // 💌 Unified Raymand Email Template System
 // ==================================================
-const buildEmailTemplate = (title, message, actionText, footerText, type = "info") => {
+const buildEmailTemplate = (
+  title,
+  message,
+  actionText,
+  footerText,
+  type = "info"
+) => {
   const colorMap = {
     success: "#22c55e",
     warning: "#facc15",
@@ -36,12 +42,16 @@ const buildEmailTemplate = (title, message, actionText, footerText, type = "info
 
       <div style="padding: 30px 20px;">
         <p style="font-size: 16px; margin-bottom: 20px;">${message}</p>
-        ${actionText
-          ? `<div style="display:inline-block;background-color:${themeColor};color:white;padding:12px 25px;border-radius:8px;font-size:16px;font-weight:500;">
+        ${
+          actionText
+            ? `<div style="display:inline-block;background-color:${themeColor};color:white;padding:12px 25px;border-radius:8px;font-size:16px;font-weight:500;">
               ${actionText}
             </div>`
-          : ""}
-        <p style="margin-top:25px;font-size:14px;color:#555;">${footerText || ""}</p>
+            : ""
+        }
+        <p style="margin-top:25px;font-size:14px;color:#555;">${
+          footerText || ""
+        }</p>
       </div>
 
       <div style="background-color:#f1f5f9;padding:15px;font-size:12px;color:#777;">
@@ -52,7 +62,15 @@ const buildEmailTemplate = (title, message, actionText, footerText, type = "info
   </div>`;
 };
 
-const sendMail = async (to, subject, title, message, actionText = "", footerText = "", type = "info") => {
+const sendMail = async (
+  to,
+  subject,
+  title,
+  message,
+  actionText = "",
+  footerText = "",
+  type = "info"
+) => {
   const transporter = nodemailer.createTransport({
     service: "Gmail",
     auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
@@ -94,7 +112,9 @@ export const register = async (req, res) => {
       email,
       "Verify Your Email ✉️",
       "Welcome to Raymand Lab 🎉",
-      `Hi ${name || "there"}! Use the verification code below to confirm your email.`,
+      `Hi ${
+        name || "there"
+      }! Use the verification code below to confirm your email.`,
       `Verification Code: <strong>${verificationCode}</strong>`,
       "This code expires in 15 minutes.",
       "info"
@@ -113,12 +133,17 @@ export const resendVerificationCode = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ msg: "User not found" });
 
-    if (user.isVerified) return res.status(400).json({ msg: "Already verified" });
+    if (user.isVerified)
+      return res.status(400).json({ msg: "Already verified" });
 
     const cooldown = 60 * 1000;
     if (user.lastResendAt && Date.now() - user.lastResendAt < cooldown) {
-      const remaining = Math.ceil((cooldown - (Date.now() - user.lastResendAt)) / 1000);
-      return res.status(429).json({ msg: `Please wait ${remaining}s before resending.` });
+      const remaining = Math.ceil(
+        (cooldown - (Date.now() - user.lastResendAt)) / 1000
+      );
+      return res
+        .status(429)
+        .json({ msg: `Please wait ${remaining}s before resending.` });
     }
 
     const code = crypto.randomBytes(5).toString("hex");
@@ -150,8 +175,10 @@ export const verifyEmail = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ msg: "User not found" });
 
-    if (user.isVerified) return res.status(400).json({ msg: "Already verified" });
-    if (user.verificationCode !== code) return res.status(400).json({ msg: "Invalid code" });
+    if (user.isVerified)
+      return res.status(400).json({ msg: "Already verified" });
+    if (user.verificationCode !== code)
+      return res.status(400).json({ msg: "Invalid code" });
     if (user.verificationCodeExp < Date.now())
       return res.status(400).json({ msg: "Code expired. Request new one." });
 
@@ -185,11 +212,14 @@ export const login = async (req, res) => {
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
-    if (!user.isVerified) return res.status(401).json({ msg: "Email not verified" });
+    if (!user.isVerified)
+      return res.status(401).json({ msg: "Email not verified" });
 
     const now = Date.now();
     if (user.twoFACode && user.twoFACodeExp > now)
-      return res.status(429).json({ msg: "2FA code already sent. Try again later." });
+      return res
+        .status(429)
+        .json({ msg: "2FA code already sent. Try again later." });
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     user.twoFACode = code;
@@ -219,14 +249,18 @@ export const verify2FA = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ msg: "User not found" });
 
-    if (user.twoFACode !== code) return res.status(400).json({ msg: "Invalid code" });
-    if (user.twoFACodeExp < Date.now()) return res.status(400).json({ msg: "Code expired" });
+    if (user.twoFACode !== code)
+      return res.status(400).json({ msg: "Invalid code" });
+    if (user.twoFACodeExp < Date.now())
+      return res.status(400).json({ msg: "Code expired" });
 
     user.twoFACode = undefined;
     user.twoFACodeExp = undefined;
     await user.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
     res.json({ msg: "Login successful", token });
   } catch (err) {
     res.status(500).json({ msg: err.message });
@@ -243,7 +277,9 @@ export const resend2FACode = async (req, res) => {
     const now = Date.now();
     if (user.last2FAResendAt && now - user.last2FAResendAt < 60 * 1000) {
       const remaining = 60 - Math.floor((now - user.last2FAResendAt) / 1000);
-      return res.status(429).json({ msg: `Wait ${remaining}s before resending.` });
+      return res
+        .status(429)
+        .json({ msg: `Wait ${remaining}s before resending.` });
     }
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -280,7 +316,7 @@ export const forgotPassword = async (req, res) => {
     user.resetPasswordExp = Date.now() + 15 * 60 * 1000;
     await user.save();
 
-    const resetLink = `http://localhost:3000/reset-password?token=${resetToken}&email=${email}`;
+    const resetLink = `https://test-raymand.vercel.app/reset-password?token=${resetToken}&email=${email}`;
 
     await sendMail(
       email,
