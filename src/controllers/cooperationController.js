@@ -18,7 +18,9 @@ export async function handleResearchForm(req, res) {
     const researchAreas = payload.researchAreas || "";
     const researchExperience = payload.researchExperience || "";
 
-    const subject = `فرم همکاری پژوهشی جدید از ${personal.fullName || "نامشخص"}`;
+    const subject = `فرم همکاری پژوهشی جدید از ${
+      personal.fullName || "نامشخص"
+    }`;
 
     const text = `
 نام و نام‌خانوادگی: ${personal.fullName}
@@ -80,19 +82,40 @@ export async function handleResearchForm(req, res) {
         <h2>درخواست همکاری پژوهشی جدید</h2>
 
         <div class="section">
-          <div class="item"><span class="label">نام و نام‌خانوادگی:</span>${escapeHtml(personal.fullName)}</div>
-          <div class="item"><span class="label">ایمیل:</span>${escapeHtml(personal.email || "-")}</div>
-          <div class="item"><span class="label">سازمان / نهاد:</span>${escapeHtml(personal.organization)}</div>
-          <div class="item"><span class="label">سمت:</span>${escapeHtml(personal.position)}</div>
-          <div class="item"><span class="label">تخصص:</span>${escapeHtml(personal.specialty)}</div>
+          <div class="item"><span class="label">نام و نام‌خانوادگی:</span>${escapeHtml(
+            personal.fullName
+          )}</div>
+          <div class="item"><span class="label">ایمیل:</span>${escapeHtml(
+            personal.email || "-"
+          )}</div>
+          <div class="item"><span class="label">ایمیل:</span>${escapeHtml(
+            personal.phone || "-"
+          )}</div>
+          <div class="item"><span class="label">سازمان / نهاد:</span>${escapeHtml(
+            personal.organization
+          )}</div>
+          <div class="item"><span class="label">سمت:</span>${escapeHtml(
+            personal.position
+          )}</div>
+          <div class="item"><span class="label">تخصص:</span>${escapeHtml(
+            personal.specialty
+          )}</div>
         </div>
 
         <div class="section">
           <h3>تحصیلات</h3>
-          <div class="item"><span class="label">مدرک:</span>${escapeHtml(education.degree)}</div>
-          <div class="item"><span class="label">رشته:</span>${escapeHtml(education.field)}</div>
-          <div class="item"><span class="label">دانشگاه:</span>${escapeHtml(education.university)}</div>
-          <div class="item"><span class="label">سال:</span>${escapeHtml(education.year)}</div>
+          <div class="item"><span class="label">مدرک:</span>${escapeHtml(
+            education.degree
+          )}</div>
+          <div class="item"><span class="label">رشته:</span>${escapeHtml(
+            education.field
+          )}</div>
+          <div class="item"><span class="label">دانشگاه:</span>${escapeHtml(
+            education.university
+          )}</div>
+          <div class="item"><span class="label">سال:</span>${escapeHtml(
+            education.year
+          )}</div>
         </div>
 
         <div class="section">
@@ -111,7 +134,9 @@ export async function handleResearchForm(req, res) {
         </div>
 
         <hr>
-        <small>ارسال‌شده از وب‌سایت RaymandGroup — ${new Date().toLocaleString("fa-IR")}</small>
+        <small>ارسال‌شده از وب‌سایت RaymandGroup — ${new Date().toLocaleString(
+          "fa-IR"
+        )}</small>
       </div>
     </body>
     </html>
@@ -119,17 +144,17 @@ export async function handleResearchForm(req, res) {
 
     // ✅ Gmail transporter
     const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: Number(process.env.EMAIL_PORT),
-  secure: process.env.EMAIL_SECURE == "true", // true for 465, false for 587
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false, // some cPanel hosts require this
-  },
-});
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: process.env.EMAIL_SECURE == "true", // true for 465, false for 587
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      tls: {
+        rejectUnauthorized: false, // some cPanel hosts require this
+      },
+    });
 
     // --- 1️⃣ Send to admin (Raymand) ---
     const adminMail = {
@@ -180,7 +205,9 @@ export async function handleResearchForm(req, res) {
     res.status(200).json({ ok: true, message: "ایمیل با موفقیت ارسال شد." });
   } catch (err) {
     console.error("❌ خطا در ارسال ایمیل:", err);
-    res.status(500).json({ ok: false, message: "خطایی در ارسال ایمیل رخ داد." });
+    res
+      .status(500)
+      .json({ ok: false, message: "خطایی در ارسال ایمیل رخ داد." });
   }
 }
 
@@ -193,7 +220,9 @@ export async function handleEducationForm(req, res) {
     const request = payload.request || "";
     const result = payload.result || "";
 
-    const subject = `فرم همکاری آموزشی جدید از ${personal.fullName || "نامشخص"}`;
+    const subject = `فرم همکاری آموزشی جدید از ${
+      personal.fullName || "نامشخص"
+    }`;
 
     const text = `
 نام و نام‌خانوادگی: ${personal.fullName}
@@ -263,22 +292,49 @@ ${result}
         <h2>درخواست همکاری آموزشی جدید</h2>
 
         <div class="section">
-          <div class="item"><span class="label">نام و نام‌خانوادگی:</span>${escapeHtml(personal.fullName)}</div>
-          <div class="item"><span class="label">ایمیل:</span>${escapeHtml(personal.email)}</div>
-          <div class="item"><span class="label">محل تولد:</span>${escapeHtml(personal.birthPlace)}</div>
-          <div class="item"><span class="label">سال تولد:</span>${escapeHtml(personal.birthYear)}</div>
-          <div class="item"><span class="label">نام پدر:</span>${escapeHtml(personal.father)}</div>
-          <div class="item"><span class="label">شماره شناسنامه:</span>${escapeHtml(personal.idNumber)}</div>
-          <div class="item"><span class="label">تخصص:</span>${escapeHtml(personal.specialty)}</div>
+          <div class="item"><span class="label">نام و نام‌خانوادگی:</span>${escapeHtml(
+            personal.fullName
+          )}</div>
+          <div class="item"><span class="label">ایمیل:</span>${escapeHtml(
+            personal.email
+          )}</div>
+          <div class="item"><span class="label">ایمیل:</span>${escapeHtml(
+            personal.phone
+          )}</div>
+          <div class="item"><span class="label">محل تولد:</span>${escapeHtml(
+            personal.birthPlace
+          )}</div>
+          <div class="item"><span class="label">سال تولد:</span>${escapeHtml(
+            personal.birthYear
+          )}</div>
+          <div class="item"><span class="label">نام پدر:</span>${escapeHtml(
+            personal.father
+          )}</div>
+          <div class="item"><span class="label">شماره شناسنامه:</span>${escapeHtml(
+            personal.idNumber
+          )}</div>
+          <div class="item"><span class="label">تخصص:</span>${escapeHtml(
+            personal.specialty
+          )}</div>
         </div>
 
         <div class="section">
           <h3>تحصیلات</h3>
-          <div class="item"><span class="label">کشور:</span>${escapeHtml(educations.country)}</div>
-          <div class="item"><span class="label">مدرک:</span>${escapeHtml(educations.degree)}</div>
-          <div class="item"><span class="label">رشته:</span>${escapeHtml(educations.field)}</div>
-          <div class="item"><span class="label">دانشگاه:</span>${escapeHtml(educations.university)}</div>
-          <div class="item"><span class="label">سال:</span>${escapeHtml(educations.year)}</div>
+          <div class="item"><span class="label">کشور:</span>${escapeHtml(
+            educations.country
+          )}</div>
+          <div class="item"><span class="label">مدرک:</span>${escapeHtml(
+            educations.degree
+          )}</div>
+          <div class="item"><span class="label">رشته:</span>${escapeHtml(
+            educations.field
+          )}</div>
+          <div class="item"><span class="label">دانشگاه:</span>${escapeHtml(
+            educations.university
+          )}</div>
+          <div class="item"><span class="label">سال:</span>${escapeHtml(
+            educations.year
+          )}</div>
         </div>
 
         <div class="section">
@@ -297,7 +353,9 @@ ${result}
         </div>
 
         <hr>
-        <small>ارسال‌شده از وب‌سایت RaymandGroup — ${new Date().toLocaleString("fa-IR")}</small>
+        <small>ارسال‌شده از وب‌سایت RaymandGroup — ${new Date().toLocaleString(
+          "fa-IR"
+        )}</small>
       </div>
     </body>
     </html>
@@ -321,7 +379,8 @@ ${result}
 
     // --- 1️⃣ Send to admin ---
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM || `"Raymand Group" <${process.env.EMAIL_USER}>`,
+      from:
+        process.env.EMAIL_FROM || `"Raymand Group" <${process.env.EMAIL_USER}>`,
       to: "info@raymandgroup.de",
       subject,
       text,
@@ -331,7 +390,9 @@ ${result}
     // --- 2️⃣ Send confirmation to user ---
     if (personal.email) {
       await transporter.sendMail({
-        from: process.env.EMAIL_FROM || `"Raymand Group" <${process.env.EMAIL_USER}>`,
+        from:
+          process.env.EMAIL_FROM ||
+          `"Raymand Group" <${process.env.EMAIL_USER}>`,
         to: personal.email,
         subject: "درخواست همکاری آموزشی شما با موفقیت ثبت شد ✅",
         html: `
@@ -366,6 +427,8 @@ ${result}
     res.status(200).json({ ok: true, message: "ایمیل با موفقیت ارسال شد." });
   } catch (err) {
     console.error("❌ خطا در ارسال ایمیل آموزشی:", err);
-    res.status(500).json({ ok: false, message: "خطایی در ارسال ایمیل رخ داد." });
+    res
+      .status(500)
+      .json({ ok: false, message: "خطایی در ارسال ایمیل رخ داد." });
   }
 }
