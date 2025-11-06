@@ -88,7 +88,7 @@ export async function handleResearchForm(req, res) {
           <div class="item"><span class="label">ایمیل:</span>${escapeHtml(
             personal.email || "-"
           )}</div>
-          <div class="item"><span class="label">ایمیل:</span>${escapeHtml(
+          <div class="item"><span class="label">شماره تماس:</span>${escapeHtml(
             personal.phone || "-"
           )}</div>
           <div class="item"><span class="label">سازمان / نهاد:</span>${escapeHtml(
@@ -298,7 +298,7 @@ ${result}
           <div class="item"><span class="label">ایمیل:</span>${escapeHtml(
             personal.email
           )}</div>
-          <div class="item"><span class="label">ایمیل:</span>${escapeHtml(
+          <div class="item"><span class="label">شماره تماس:</span>${escapeHtml(
             personal.phone
           )}</div>
           <div class="item"><span class="label">محل تولد:</span>${escapeHtml(
